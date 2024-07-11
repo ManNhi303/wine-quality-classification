@@ -1,0 +1,665 @@
+---
+title: "Đồ án cuối kỳ - Xử lý số liệu thống kê"
+subtitle: "Chủ đề: Dự đoán chất lượng rượu vang"
+author: "Nhóm B"
+output:
+  pdf_document:
+    latex_engine: lualatex
+    number_sections: yes
+    keep_tex: yes
+fontsize: 12pt
+header-includes:
+  - \AtBeginDocument{\let\maketitle\relax}
+  - \usepackage{fancyhdr}
+  - \usepackage{tikz}
+  - \pagestyle{fancy}
+  - \setlength{\headheight}{15pt}
+  - \fancyhead{}
+  - \fancyhead[L]{\textit{Đồ án cuối kỳ - Xử lý số liệu thống kê}}
+  - \fancyhead[R]{\textit{Nhóm B - Dự đoán chất lượng rượu vang}}
+  - \fancyfoot{}
+  - \fancyfoot[R]{\thepage}
+---
+
+\begin{titlepage}
+   \begin{tikzpicture}[remember picture,overlay,inner sep=0,outer sep=0]
+     \draw[black!70!black,line width=4pt] ([xshift=-1.5cm,yshift=-2cm]current page.north east) coordinate (A)--([xshift=1.5cm,yshift=-2cm]current page.north west) coordinate(B)--([xshift=1.5cm,yshift=2cm]current page.south west) coordinate (C)--([xshift=-1.5cm,yshift=2cm]current page.south east) coordinate(D)--cycle;
+
+     \draw ([yshift=0.5cm,xshift=-0.5cm]A)-- ([yshift=0.5cm,xshift=0.5cm]B)--
+     ([yshift=-0.5cm,xshift=0.5cm]B) --([yshift=-0.5cm,xshift=-0.5cm]B)--([yshift=0.5cm,xshift=-0.5cm]C)--([yshift=0.5cm,xshift=0.5cm]C)--([yshift=-0.5cm,xshift=0.5cm]C)-- ([yshift=-0.5cm,xshift=-0.5cm]D)--([yshift=0.5cm,xshift=-0.5cm]D)--([yshift=0.5cm,xshift=0.5cm]D)--([yshift=-0.5cm,xshift=0.5cm]A)--([yshift=-0.5cm,xshift=-0.5cm]A)--([yshift=0.5cm,xshift=-0.5cm]A);
+
+     \draw ([yshift=-0.3cm,xshift=0.3cm]A)-- ([yshift=-0.3cm,xshift=-0.3cm]B)--
+     ([yshift=0.3cm,xshift=-0.3cm]B) --([yshift=0.3cm,xshift=0.3cm]B)--([yshift=-0.3cm,xshift=0.3cm]C)--([yshift=-0.3cm,xshift=-0.3cm]C)--([yshift=0.3cm,xshift=-0.3cm]C)-- ([yshift=0.3cm,xshift=0.3cm]D)--([yshift=-0.3cm,xshift=0.3cm]D)--([yshift=-0.3cm,xshift=-0.3cm]D)--([yshift=0.3cm,xshift=-0.3cm]A)--([yshift=0.3cm,xshift=0.3cm]A)--([yshift=-0.3cm,xshift=0.3cm]A);
+   \end{tikzpicture}
+
+    \begin{center}
+        {\large\bf UNIVERSITY OF SCIENCE, VNU-HCM}\\
+        
+        {\large\bf FACULTY OF MATHEMATICS AND COMPUTER SCIENCE} \\
+        
+        \vskip 1cm
+        
+        \includegraphics[width=2in]{C:/Users/Thang Bui/Documents/Data/logo.png}
+    
+        \vspace{0.5cm}
+        \textbf{\fontsize{18pt}{0pt}\selectfont BÁO CÁO ĐỒ ÁN} \\
+        \vspace{1cm}
+        \textbf{\fontsize{24pt}{0pt}\selectfont DỰ ĐOÁN} \\\vspace{0.5cm}
+        \textbf{\fontsize{24pt}{0pt}\selectfont CHẤT LƯỢNG RƯỢU VANG} 
+        \vskip 1cm
+        {\bf {\it Course:} Xử lý số liệu thống kê} \\
+    
+        \vskip 3cm
+        \centering
+        \begin{tabular}{l l}
+            \fontsize{14pt}{0pt}\selectfont Instructor: & \fontsize{14pt}{0pt}\selectfont TS. Tô Đức Khánh \vspace{4pt}\\ 
+            \fontsize{14pt}{0pt}\selectfont Students:
+            & \fontsize{14pt}{0pt}\selectfont Bùi Quang Thắng - 21280048 \\
+            & \fontsize{14pt}{0pt}\selectfont Huỳnh Thị Thu Thoảng - 21280074 \\
+            & \fontsize{14pt}{0pt}\selectfont Nguyễn Thị Bích Ngọc - 21280100 \\
+            & \fontsize{14pt}{0pt}\selectfont Đoàn Thị Mẫn Nhi - 21280102 \\
+            & \fontsize{14pt}{0pt}\selectfont Nguyễn Thúy Vy - 21280120 \\
+        \end{tabular}
+
+        \vfill
+
+        % ngày giờ
+    \fontsize{14pt}{0pt}\selectfont {HO CHI MINH CITY, JULY 07, 2024}
+    
+    \end{center}
+\end{titlepage}
+
+\clearpage
+\newpage
+
+\tableofcontents
+
+\newpage
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Giới thiệu bài toán
+
+Trong bài toán này, chúng ta sẽ phân loại chất lượng rượu vang dựa trên các đặc trưng hóa học của chúng. Bộ dữ liệu bao gồm thông tin về hai loại rượu vang (đỏ và trắng) với các đặc trưng như độ pH, hàm lượng đường, và độ cồn. Mục tiêu là xây dựng một mô hình dự đoán chất lượng rượu vang, được đánh giá theo thang điểm từ 3 đến 9, từ đó giúp các nhà sản xuất rượu vang cải thiện quy trình sản xuất và đảm bảo chất lượng sản phẩm.
+
+**Phương pháp sử dụng**:
+
+- **Xử lý dữ liệu:** Kết hợp hai bộ dữ liệu rượu vang đỏ và trắng, kiểm tra và xử lý các giá trị thiếu (nếu có), và chuyển đổi các cột thành kiểu dữ liệu phù hợp.
+- **Xử lý imbalance:** Sử dụng kỹ thuật SMOTE để cân bằng lại số lượng mẫu giữa các lớp chất lượng rượu vang.
+- **Train mô hình:** Sử dụng và so sánh các mô hình để phân loại chất lượng rượu vang, bao gồm:
+  - Random Forest: model phân loại sử dụng kỹ thuật bagging để kết hợp nhiều Decision Tree.
+  - Naive Bayes: model phân loại sử dụng xác suất Bayes để tính các xác suất có điều kiện giữa các class.
+- **Đánh giá mô hình:** Sử dụng confusion matrix để đánh giá hiệu suất của mô hình và phương pháp bootstrap để ước lượng độ chính xác và độ tin cậy của mô hình.
+- **Phân tích feature importance:** Sử dụng độ giảm Gini để xác định tầm quan trọng của các đặc trưng đối với chất lượng rượu vang.
+- **Sử dụng Bootstrap:** Áp dụng phương pháp bootstrap để đánh giá sự ổn định và độ tin cậy của mô hình bằng cách lặp lại quá trình huấn luyện trên các mẫu con của dữ liệu gốc và đo lường độ chính xác trên tập kiểm tra.
+
+```{r libraries, include=FALSE, echo=FALSE, results='hide'}
+library(knitr)
+library(scutr) # dùng để handle imbalance
+library(tidyverse)
+library(dplyr)
+library(janitor)
+library(ggplot2)
+library(patchwork)
+library(boot)
+library(caTools)
+library(Metrics)
+library(caret)
+library(ISLR2)
+library(leaps)
+library(glue)
+library(randomForest)
+library(pROC)
+library(FNN)
+library(e1071)
+library(reshape2)
+library(RColorBrewer)
+library(ggExtra)
+library(grid)
+library(gridExtra)
+library(FactoMineR)
+library(factoextra)
+library(GGally)
+```
+
+# Tổng quan về dữ liệu
+
+- Dữ liệu có 2 file là `winequality-red.csv` và `winequality-white.csv` với các cột tương đồng nhau, nên ta cần merge 2 file lại cùng 1 dataframe chung, và tạo cột mới là `wine_type` để phân biệt giữa rượu vang đỏ và trắng, cuối cùng là chuyển cột `quality` thành kiểu dữ liệu `factor` (đây là sẽ là column target để handle target value).
+
+- Đối với từng file dữ liệu:
+  - File `winequality-red.csv` chứa 1599 dòng và 12 cột.
+  - File `winequality-white.csv` chứa 4898 dòng và 12 cột.
+
+- Việc ta gộp lại là để dễ so sánh, cũng như làm EDA cho cả 2 loại rượu vang.
+
+- Khi load data, ta cũng sử dụng hàm `clean_names` để chuyển tên cột thành dạng snake_case, giúp cho việc xử lý dữ liệu dễ dàng hơn.
+
+```{r read-data}
+GLOBAL_PATH <- "~/Data"
+winequality_red <- read.csv(glue("{GLOBAL_PATH}/winequality-red.csv"), 
+                            sep = ";") %>% clean_names()
+winequality_white <- read.csv(glue("{GLOBAL_PATH}/winequality-white.csv"),
+                              sep = ",") %>% clean_names()
+
+# Thêm cột loại rượu
+winequality_red$wine_type <- 0
+winequality_white$wine_type <- 1
+
+# merge lại
+combined_wines <- rbind(winequality_red, winequality_white)
+combined_wines$quality <- as.factor(combined_wines$quality)
+
+# show only head and last 5 columns
+kable(head(combined_wines[, 8:12], 8))
+```
+
+
+- Vì các cột của cả hai dataset là giống nhau, nên ta sẽ chỉ tóm tắt về dữ liệu của một dataset. Các dữ liệu về mặt ý nghĩa và kiểu dữ liệu cũng sẽ tương tự đối với `winequality-white.csv` hay `winequality-red.csv`.
+
+- Bảng thống kê tổng hợp các biến định lượng:
+
+```{r summary-data-quant}
+quantitative_vars <- c('fixed_acidity', 'volatile_acidity', 'citric_acid',
+                       'residual_sugar', 'chlorides', 'free_sulfur_dioxide', 
+                       'total_sulfur_dioxide', 'density', 'p_h', 'sulphates',
+                       'alcohol')
+                       
+df_sum <- combined_wines %>%
+summarise(across(quantitative_vars,
+list(gtnn = min, gtln = max, tv = median, tb = mean, dlc = sd),
+.names = "{.col}-{.fn}"))
+
+df_stats_tidy <- df_sum |> gather(ten, gt) |>
+separate(ten, into = c("bien", "tk"), sep = "-") |>
+spread(tk, gt) |>
+select(bien, gtnn, gtln, tv, tb, dlc)
+print.data.frame(df_stats_tidy, digits = 4)
+```
+
+- Tóm tắt các giá trị định tính có trong dữ liệu:
+
+| Tên cột | Ý nghĩa | Giá trị |
+|---------|---------|--------|
+| wine_type | Loại rượu (là cột tự tạo) | 0 (red), 1 (white) |
+| quality | Chất lượng rượu | 3, 4, 5, 6, 7, 8, 9 |
+
+- Với cột `quality`, giá trị càng cao thì chất lượng rượu càng tốt, và ngược lại.
+
+- Số lượng mẫu của mỗi class trong cột `quality` của dữ liệu `winequality-red.csv`:
+
+```{r count-quality-red}
+table(winequality_red$quality)
+```
+
+- Số lượng mẫu của mỗi class trong cột `quality` của dữ liệu `winequality-white.csv`:
+
+```{r count-quality-white}
+table(winequality_white$quality)
+```
+
+- Dữ liệu cho thấy có rất nhiều giá trị định lượng (numerical), là các feature liên quan đến hóa học của rượu vang, và cột giá trị định tính (categorical) có tên `quality`, sẽ là cột target để phân loại chất lượng rượu vang.
+
+# EDA - Exploratory Data Analysis
+
+- Trước khi xây dựng mô hình, ta cần phải hiểu rõ về dữ liệu, qua đó có thể đưa ra những nhận xét và giả định về dữ liệu, từ đó có thể xử lý dữ liệu một cách hiệu quả.
+
+- Ta kiểm tra các giá trị bị thiếu bằng hàm `is.na`:
+
+```{r check-miss}
+sum(is.na(combined_wines))
+```
+
+- Từ đây cho thấy dữ liệu cho thấy không có giá trị missing nào, điều này chứng tỏ ta không cần phải dùng các kỹ thuật để handle missing data, hay điền khuyết giá trị.
+
+- Dưới đây sẽ là phân phối của các class theo cột quality, bài toán yêu cầu là phân loại chất lượng rượu vang, thì sẽ liên quan đến cột `quality` này. Ta có các class với giá trị trải dài từ 3 đến 9.
+
+```{r check-class}
+combined_wines$quality <- as.factor(combined_wines$quality) 
+table(combined_wines$quality)
+```
+
+- **Nhận xét:** data bị imblance ở chỗ: thiếu các chai rượu có chất lượng rất thấp (3,4,...) và rất cao (9,8,...). Điều này sẽ ảnh hưởng đến việc train mô hình, vì mô hình sẽ dễ bị bias về các class có số lượng mẫu nhiều hơn. Do đó, ta cần relabel và resample lại dữ liệu để cân bằng số lượng mẫu giữa các class, mà ý tưởng chính ở đây là gộp class 3 và 4 thành một class, và class 8 và 9 thành một class, sau đó sử dụng kỹ thuật SMOTE để oversample số lượng mẫu tương đương giữa các class. Do 3 và 9 có quá ít để oversample, nên việc relabel lại như trên là việc cần thiết.
+
+- Phân phối của chất lượng rượu vang theo loại rượu
+
+```{r plot-wine}
+ggplot(combined_wines, aes(x = quality, fill = as.factor(wine_type))) +
+  geom_bar(position = "dodge") +
+  labs(title = "Phan phoi cua chat luong ruou vang theo loai ruou",
+       x = "Quality",
+       y = "Counts",
+       fill = "Wine Type") +
+  theme_minimal()
+```
+
+- Qua biểu đồ trên, ta dễ dàng nhận xét được, rượu vang trắng có số lượng nhiều hơn vượt trội so với rượu vang đỏ, và đồng thời chất lượng 5 và 6 cho rượu vang chiếm tỉ lệ lớn trong tập dữ liệu thu thập được.
+
+
+- Mối quan hệ các biến đến chất lượng rượu thông qua correlation matrix:
+
+```{r scatter-wine}
+corr_wines <- combined_wines
+corr_wines$quality <- as.numeric(corr_wines$quality) 
+corr_matrix <- cor(corr_wines[, sapply(corr_wines, is.numeric)])
+melted_corr_matrix <- melt(corr_matrix)
+
+# Tạo biểu đồ heatmap với ma trận corr
+ggplot(data = melted_corr_matrix, aes(x = Var1, y = Var2, fill = value)) +
+geom_tile() + scale_fill_gradientn(colors = brewer.pal(9, "Blues")) +
+  geom_text(aes(label = round(value, 2)), color = "black", size = 3) +
+  theme_minimal() + labs(title = "Correlation Matrix Heatmap") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+- Có thể dễ dàng thấy, biến quality có tương quan (correlation) mạnh đến feature **"alcohol"**, nên ta phỏng đoán đây sẽ là feature quan trọng nhất, quyết định chính nên chất lượng của rượu vang.
+
+- Bên cạnh đó, có thể nhận xét rằng, có các biến tương quan dương và tương quan âm với target value (quality), các feature này sẽ ảnh hưởng trực tiếp và rõ rệt đến chất lượng rượu vang:
+  - Tương quan dương:
+    - alcohol (corr = 0.44), là nồng độ cồn, thể hiện độ mạnh của rượu
+  - Tương quan âm:
+    - chlorides (corr = -0.13), thể hiện vị mặn của rượu
+    - volatile acidity (corr = -0.27)m là độ axit bay hơi của rượu, thể hiện mức độ chua của rượu
+    - density (corr = -0.31), thể hiện độ đặc của rượu
+  - Các feature còn lại có tương quan với quality không quá mạnh nên ta tạm thời chỉ xem xét các feature trên khi EDA.
+
+- Đầu tiên, ta sẽ dùng pairplot để xem xét mối quan hệ giữa 4 biến đã đề cập trên với chất lượng rượu vang:
+
+```{r pairplot}
+ggpairs(combined_wines, columns = c("alcohol", "chlorides", 
+                                    "volatile_acidity", "density"),
+  aes(color = quality), title = "Pairplot for Quality", progress = FALSE,
+  upper = list(continuous = wrap(ggally_cor, size = 2.1)),
+)
+```  
+
+- Chọn hai biến có |corr| cao nhất và vẽ biểu đồ marginal density plot để xem xét mối quan hệ giữa chúng với chất lượng rượu vang:
+
+```{r extraplot}
+p <- ggplot(combined_wines, aes(x = `volatile_acidity`, 
+                                y = alcohol, color = quality)) +
+  geom_point(alpha = 0.5) +
+  labs(title = "Scatter plot between Volatile Acidity and Alcohol",
+       x = "Volatile Acidity",y = "Alcohol",color = "Quality") +
+  theme_minimal()
+# Add marginal density plots
+ggMarginal(p, type = "density", color = "red")
+```
+
+- Chất lượng rượu vang (quality) như được phân sẵn thành các cụm riêng trên biểu đồ (đặc biệt là các class 5 và 6), điều đó chứng tỏ hai biến này đóng vai trò không kém quan trọng trong việc đánh giá chất lượng cho rượu vang.
+
+- Tiếp theo, ta sẽ xem xét các biến trên qua violin plot, để xem xét feature range của từng biến theo từng loại rượu vang:
+
+```{r violin-plot}
+p1 <- ggplot(combined_wines, aes(x = factor(wine_type), y = volatile_acidity, 
+                                 fill = factor(wine_type))) +
+  geom_violin() + labs(x = "Wine Type", y = "Volatile Acidity") +
+  ggtitle("Volatile Acidity by Wine Type") + theme_minimal()
+
+p2 <- ggplot(combined_wines, aes(x = factor(wine_type), y = density, 
+                                 fill = factor(wine_type))) +
+  geom_violin() + labs(x = "Wine Type", y = "Density") +
+  ggtitle("Density by Wine Type") + theme_minimal()
+
+p3 <- ggplot(combined_wines, aes(x = factor(wine_type), y = alcohol, 
+                                 fill = factor(wine_type))) +
+  geom_violin() + labs(x = "Wine Type", y = "Alcohol") +
+  ggtitle("Alcohol by Wine Type") + theme_minimal()
+
+p4 <- ggplot(combined_wines, aes(x = factor(wine_type), y = chlorides,
+                                 fill = factor(wine_type))) +
+  geom_violin() + labs(x = "Wine Type", y = "Chlorides") +
+  ggtitle("Chlorides by Wine Type") + theme_minimal()
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
+- Do hai dữ liệu rượu vang đỏ và trắng có các đặc trưng hóa học khác nhau với những khoảng giá trị khác nhau, nên ta cần phải xem xét và train mô hình cho từng loại rượu vang riêng biệt, lẫn cả khi merge lại.
+
+- Từ đó, ta có thể rút ra kết luận rằng, mô hình và cách xử lý dữ liệu nào là phù hợp nhất cho bài toán phân loại chất lượng rượu vang, nhằm đánh giá bài toán một cách công tâm và hiệu quả nhất.
+
+
+# Feature Engineering
+
+## Relabel lại trên merge data và red, white wine data
+
+- Ta sẽ relabel lại các class 3 và 4 thành 4, class 8 và 9 thành 8, để giảm số lượng class bị imbalance quá mức, sau đó chuyển cột quality thành kiểu dữ liệu factor.
+
+```{r relabel}
+combined_wines$quality <- as.character(combined_wines$quality)
+combined_wines$quality[combined_wines$quality %in% c("3", "4")] <- "4"
+combined_wines$quality[combined_wines$quality %in% c("8", "9")] <- "8"
+combined_wines$quality <- as.factor(combined_wines$quality)
+
+winequality_red$quality <- as.character(winequality_red$quality)
+winequality_red$quality[winequality_red$quality %in% c("3", "4")] <- "4"
+winequality_red$quality[winequality_red$quality %in% c("8", "9")] <- "8"
+winequality_red$quality <- as.factor(winequality_red$quality)
+
+winequality_white$quality <- as.character(winequality_white$quality)
+winequality_white$quality[winequality_white$quality %in% c("3", "4")] <- "4"
+winequality_white$quality[winequality_white$quality %in% c("8", "9")] <- "8"
+winequality_white$quality <- as.factor(winequality_white$quality)
+```
+
+## Chia tập dữ liệu thành train và test
+
+- Dữ liệu được chia thành hai tập: train (80%) và test (20%) bằng cách sử dụng hàm `createDataPartition`.
+
+- Ta sử dụng test size như trên là vì có quá ít data ở hai class 4 và 8, nên ta cần capture được nhiều dữ liệu nhất thuộc về các class này cho tập train.
+
+```{r split-data}
+set.seed(123)
+split <- createDataPartition(combined_wines$quality, p = 0.80, list = FALSE)
+train_data <- combined_wines[split, ]
+test_data <- combined_wines[-split, ]
+```
+
+## Xử lý imbalanced data bằng SMOTE
+
+- Đầu tiên, ta cần kiểm tra lại xem các class bị imbalance ở những label nào:
+
+```{r check-target}
+table(train_data$quality)
+```
+
+- Chúng ta sử dụng **SMOTE** của thư viện `scutr` để cân lại dữ liệu huấn luyện, nhằm đảm bảo mỗi lớp chất lượng có số lượng mẫu tương đương nhau hoặc gần xấp xỉ với nhau.
+
+
+- Như vậy, class 5 và 6 là hai class có số lượng quá vượt trội so với các class còn lại, idea ở đây là chọn 1000 làm con số sample đại diện cho mỗi class, sau đó dùng SMOTE để oversampling những class còn lại với nhau. Cuối cùng là merge những subset đã được handle lại. (chỉ cần handle ở train set)
+
+```{r balance-data}
+
+# viết hàm smote_all để handle imbalanced data, với tên cột,
+# và tên target cần handle, sử dụng oversample SMOTE
+
+custom_smote_all <- function(data, target, target_name, n, 
+                             exclude = c()) {
+  target <- as.factor(target)
+  target_name <- as.character(target_name)
+  target_levels <- levels(target)
+  target_levels <- target_levels[!target_levels %in% exclude]
+  
+  smoted_data <- data.frame()
+  for (i in target_levels) {
+    subset <- dplyr::filter(data, data[[target_name]] == i)
+    smoted_subset <- oversample_smote(subset, i, target_name, n)
+    smoted_data <- rbind(smoted_data, smoted_subset)
+  }
+  
+  # rbind with original data of excluded classes
+  excluded_data <- dplyr::filter(data, data[[target_name]] %in% exclude)
+  smoted_data <- rbind(smoted_data, excluded_data)
+  
+  # convert to factor
+  smoted_data[[target_name]] <- as.factor(smoted_data[[target_name]])
+  
+  return(smoted_data)
+}
+
+train_data_balanced <- custom_smote_all(train_data, train_data$quality, 
+                                        "quality", 1000, c("5", "6"))
+
+table(train_data_balanced$quality)
+test_data$quality <- as.factor(test_data$quality)
+```
+
+- Có thể thấy, data sẽ balance hơn rất nhiều. Bằng việc relabel và resample lại dữ liệu, ta đã giảm được hiện tượng imbalanced data, giúp mô hình học tốt hơn, tránh các hiện tượng bias do số lượng mẫu quá ít.
+
+# Mô hình phân loại
+
+## Sử dụng dataset merge giữa red và white wine
+
+## Random Forest
+
+### Không sử dụng Bootstrap
+
+Mô hình đầu tiên mà ta sử dụng đó là Random Forest, do mô hình có khả năng generalize tốt trên những tập data bị imbalanced, mà cụ thể là dữ liệu về rượu vang của ta ở đây.
+
+```{r build-model}
+rf_model <- randomForest(quality ~ ., data = train_data_balanced)
+rf_predictions <- predict(rf_model, test_data)
+```
+
+- Sau đó ta có thể đánh giá mô hình bằng cách sử dụng Confusion Matrix.
+
+```{r val-model}
+rf_cm <- confusionMatrix(rf_predictions, test_data$quality)
+print(rf_cm)
+```
+- Tiếp tục xem xét các giá trị F1 và Recall của mô hình
+
+```{r val-f1-model}
+print(rf_cm$byClass)
+```
+
+- Nhìn chung, độ chính xác của cả mô hình là khá tốt, tuy nhiên vẫn còn một số class bị dự đoán sai, đặc biệt là class 4 và 8, điều này có thể là do số lượng mẫu ban đầu của hai class này quá ít, nên khi oversample, model vẫn bị thiếu thông tin về hai class này.
+
+### Phương pháp Bootstrap
+
+Trong phần này, ta sử dụng phương pháp bootstrap để cải thiện chất lượng mô hình. Phương pháp này giúp đánh giá sự ổn định và độ tin cậy của mô hình bằng cách lặp lại quá trình huấn luyện nhiều lần trên các mẫu con của dữ liệu gốc và đo lường độ chính xác trên tập kiểm tra.
+
+Trong bài toán này, ta sử dụng bootstrap với R = 100.
+
+``` {r bootstrap}
+# hàm tính bootstrap cho randomForrest
+bootstrap_accuracy <- function(data, indices) {
+  d <- data[indices, ]
+  rf_model <- randomForest(quality ~ ., data = d)
+  predictions <- predict(rf_model, test_data)
+  cm <- confusionMatrix(predictions, test_data$quality)
+  return(cm$overall['Accuracy'])
+}
+```
+
+- Tiến hành apply bootstrap với R = 100.
+
+```{r bootstrapapply}
+
+# Apply bootstrap method
+set.seed(123)
+results <- boot(
+  data = train_data_balanced, 
+  statistic = bootstrap_accuracy, 
+  R = 100
+)
+
+# Display bootstrap results
+print(results)
+```
+
+- Ta vẽ ra đồ thị về phân phối của độ chính xác mô hình với bootstrap trên như sau:
+
+```{r bootval}
+accuracy_distribution <- data.frame(Accuracy = results$t)
+ggplot(accuracy_distribution, aes(x = Accuracy)) +
+  geom_histogram(binwidth = 0.005, fill = 'lightblue', color = 'black', 
+                 alpha = 0.7) +
+  geom_vline(aes(xintercept = mean(Accuracy)), color = 'red', 
+             linetype = 'dashed') +
+  labs(title = "Bootstrap Distribution of Model Accuracy",
+       x = "Accuracy",
+       y = "Frequency") +
+  theme_minimal()
+```
+
+- Kết quả của phương pháp bootstrap cho ta thấy phân phối của độ chính xác, giúp ta hiểu rõ hơn về sự biến thiên và độ tin cậy của mô hình. Từ đó ta có thể nhận xét rằng, độ chính xác của mô hình là rất ổn định từ khoảng 0.60 tới 0.66.
+
+### Đánh giá tầm quan trọng của các feature với cột quality
+
+Ta tiếp tục đánh giá feature importance bằng cách so sánh Gini của từng feature với target value là quality của mô hình RF vừa được train phía trên:
+
+```{r feature-importance}
+rf_importance_df <- as.data.frame(importance(rf_model))
+rf_importance_df$Feature <- rownames(rf_importance_df)
+rf_importance_plot <- ggplot(data = rf_importance_df, 
+  aes(x = reorder(Feature, MeanDecreaseGini), y = MeanDecreaseGini)) +
+  geom_bar(stat = "identity", fill="lightblue") +
+  geom_text(aes(label = round(MeanDecreaseGini, 2)), hjust = -0.05, size = 2) +
+  coord_flip() +
+  labs(title = "Wines Feature Importance vs Quality (Random Forest)", 
+       x = "Feature", y = "Gini") +
+  theme_minimal()
+rf_importance_plot
+```
+
+- Như vậy, rượu có độ cao, độ axit bay hơi, độ axit cố định, nồng độ cồn, độ pH là những feature quan trọng nhất ảnh hưởng đến chất lượng rượu vang.
+
+- Có thể nhận thấy, hai feature rất tương quan nhau như đã đề cập ở phần EDA, đó là **alcohol** và **volatile.acidity**, cũng nắm Feature Importance cao nhất trong mô hình Random Forest. Điều này chứng tỏ rằng, nồng độ cồn và độ axit bay hơi là hai yếu tố quan trọng nhất ảnh hưởng đến chất lượng rượu vang, và phải đi kèm với nhau.
+
+- Vì mô hình Random Forest có khả năng giải thích tốt, nên việc sử dụng mô hình này để phân loại chất lượng rượu vang là một lựa chọn tốt.
+
+$\Rightarrow$ **Kết luận:** Ta có thể đề xuất cho nhà sản xuất rượu vang rằng, để cải thiện chất lượng sản phẩm, họ cần chú ý nhất đến nồng độ cồn và độ axit bay hơi trong quá trình sản xuất, để đảm bảo chất lượng sản phẩm cuối cùng, vì đây sẽ là hai yếu tố quyết định chất lượng rượu vang. Bên cạnh đó, việc kiểm soát các yếu tố khác như độ pH, hàm lượng đường, độ đặc cũng rất quan trọng.
+
+## Naive Bayes
+
+- Naive Bayes là một trong những thuật toán phân loại dựa trên xác suất Bayes, rất hiệu quả và đơn giản, đặc biệt đối với các bài toán phân loại có số lượng mẫu nhỏ hoặc dữ liệu bị thiếu.
+
+- Train model Naive Bayes với phương pháp Laplace Smoothing, để model tự thêm 1 vào các dữ liệu bị thiếu tương ứng với từng class. Tránh việc gây ra các xác suất Bayes bằng 0, điều này sẽ giảm được hiện tượng overfitting.
+
+```{r naivebayes-train}
+nb_model <- naiveBayes(
+  quality ~ ., 
+  data = train_data_balanced,
+  laplace = 1
+)
+
+nb_predictions <- predict(nb_model, test_data)
+```
+
+- Đánh giá mô hình bằng Confusion matrix:
+
+```{r validnaive}
+nb_cm <- confusionMatrix(nb_predictions, test_data$quality)
+nb_cm
+```
+
+- Nhìn chung, độ chính xác của Naive Bayes là khá tệ khi so với Random Forest, vẫn bị confuse khá nhiều giữa các class.
+
+- Ta không cần sử dụng phương pháp bootstrap cho mô hình Naive Bayes vì mô hình này bản thân đã có sẵn phương pháp smoothing để giảm overfitting, và vì accuracy của mô hình này không cao, nên việc sử dụng bootstrap không cần thiết do ta không chọn mô hình này làm mô hình chính.
+
+## SVM (Further work)
+
+- Tiếp theo, ta sẽ sử dụng mô hình SVM để phân loại chất lượng rượu vang.
+
+```{r svm}
+svm_model <- svm(quality ~ ., data = train_data_balanced)
+svm_predictions <- predict(svm_model, test_data)
+svm_cm <- confusionMatrix(svm_predictions, test_data$quality)
+print(svm_cm)
+```
+
+- Cũng như Naive Bayes, mô hình SVM cho kết quả với độ chính xác khoảng 0.5-0.6.
+
+- Tuy nhiên, mô hình SVM có thể cải thiện được nhiều so với Naive Bayes, nhưng vẫn không bằng Random Forest.
+
+## Model riêng cho red và white
+
+- Trong phần này, ta sẽ xem xét hiệu suất của các mô hình Random Forest khi áp dụng cho từng loại rượu vang riêng biệt, đó là red wine và white wine.
+
+```{r split-data2}
+# Chia dữ liệu thành tập huấn luyện 
+# và kiểm tra riêng biệt cho từng loại rượu
+set.seed(123)
+trainIndexRed <- createDataPartition(winequality_red$quality, 
+                                    p = .8, list = FALSE)
+trainIndexWhite <- createDataPartition(winequality_white$quality,
+                                    p = .8, list = FALSE)
+
+trainDataRed <- winequality_red[trainIndexRed, ]
+testDataRed <- winequality_red[-trainIndexRed, ]
+
+trainDataWhite <- winequality_white[trainIndexWhite, ]
+testDataWhite <- winequality_white[-trainIndexWhite, ]
+
+# set quality as factor
+trainDataRed$quality <- as.factor(trainDataRed$quality)
+testDataRed$quality <- as.factor(testDataRed$quality)
+
+trainDataWhite$quality <- as.factor(trainDataWhite$quality)
+testDataWhite$quality <- as.factor(testDataWhite$quality)
+```
+
+- Sau đó sử dụng hàm SMOTE custom để cân bằng lại dữ liệu cho từng loại rượu vang.
+
+```{r balance-data2}
+trainDataRed <- custom_smote_all(trainDataRed, trainDataRed$quality, 
+                                        "quality", 1000, c("5", "6"))
+
+trainDataWhite <- custom_smote_all(trainDataWhite, trainDataWhite$quality,
+                                          "quality", 1000, c("5", "6"))
+```
+
+### Áp dụng mô hình Random Forest cho red và white wine
+
+- Việc train mô hình Random Forest cho red và white wine tương tự như trên, sau đó so sánh kết quả giữa hai loại rượu vang.
+
+```{r rf-red-white}
+rf_model_red <- randomForest(quality ~ ., data = trainDataRed)
+rf_predictions_red <- predict(rf_model_red, testDataRed)
+rf_cm_red <- confusionMatrix(rf_predictions_red, testDataRed$quality)
+
+rf_model_white <- randomForest(quality ~ ., data = trainDataWhite)
+rf_predictions_white <- predict(rf_model_white, testDataWhite)
+rf_cm_white <- confusionMatrix(rf_predictions_white, testDataWhite$quality)
+```
+
+### Comparison plot giữa red và white wine
+
+- Vẽ biểu đồ so sánh độ chính xác giữa red và white wine:
+
+```{r compareplot}
+data_comparisons <- data.frame(
+  Data = c("Red Wine", "White Wine", "Merged Data"),
+  Accuracy = c(rf_cm_red$overall['Accuracy'], 
+               rf_cm_white$overall['Accuracy'], 
+               rf_cm$overall['Accuracy'])
+)
+
+kable(data_comparisons)
+
+ggplot(data_comparisons, aes(x = Data, y = Accuracy, fill = Data)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Data Comparison - Accuracy", x = "Data", y = "Accuracy") +
+  theme_minimal()
+```
+
+- Như vậy, ta có thể thấy rằng mô hình Random Forest dù áp dụng cho cách xử lý dữ liệu khác nhau (merge, red wine, white wine) đều cho kết quả tương đương nhau, với độ chính xác khoảng 0.6-0.7.
+
+- Tuy nhiên, mô hình Random Forest cho white wine có độ chính xác cao hơn so với red wine, điều này có thể do dữ liệu white wine có số lượng mẫu nhiều hơn, nên mô hình dễ generalize hơn.
+
+# So sánh các model
+
+- Để hiểu rõ hơn về hiệu suất của các mô hình học máy khác nhau, chúng ta cần so sánh các chỉ số như độ chính xác (Accuracy), F1, độ chính xác (Precision) và độ nhạy (Recall). Bước này giúp xác định mô hình nào có kết quả dự đoán chất lượng rượu vang tốt nhất dựa trên các tiêu chí đánh giá khác nhau.
+
+- Biểu đồ so sánh dưới đây hiển thị các chỉ số của mô hình đã train phía trên. Chúng ta sẽ dựa vào biểu đồ này và xem xét độ chính xác, F1, độ chính xác và độ nhạy của từng mô hình để quyết định mô hình nào phù hợp nhất cho dữ liệu của chúng ta.
+
+```{r compare-model}
+model_comparisons <- data.frame(
+  Model = c("Random Forest", "Naive Bayes", "SVM"),
+  Accuracy = c(rf_cm$overall['Accuracy'],
+               nb_cm$overall['Accuracy'],
+               svm_cm$overall['Accuracy'])
+)
+
+kable(model_comparisons)
+
+ggplot(model_comparisons, aes(x = Model, y = Accuracy, fill = Model)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Model Comparison - Accuracy", x = "Model", y = "Accuracy") +
+  theme_minimal()
+```
+
+- Từ đó, ta có thể dễ dàng chọn được **Random Forest** làm mô hình thích hợp nhất cho bài toán phân loại chất lượng rượu vang, với độ chính xác cao nhất.
+
+- Ngoài ra, mô hình **Random Forest** cũng rất phù hợp với dữ liệu imbalanced, và có khả năng generalize tốt trên cả dữ liệu merge và dữ liệu riêng lẻ.
+
+# Kết luận
+
+- Các mô hình khác nhau được sử dụng để phân loại chất lượng rượu vang dựa trên các đặc trưng hóa học của chúng, bao gồm thông tin về hai loại rượu vang (đỏ và trắng) với các đặc trưng như độ pH, hàm lượng đường, và độ cồn. Mà trong đó, mô hình **"Random Forest"** đạt được độ chính xác tổng thể khá tốt sau khi được train trên tập dữ liệu đã được xử lý bằng kỹ thuật SMOTE để cân bằng số lượng mẫu giữa các lớp chất lượng rượu vang.  
+
+- Đề xuất cho nhà sản xuất rượu vang: nếu muốn cải thiện chất lượng rượu vang, họ nên tập trung vào việc kiểm soát độ cồn và độ axit bay hơi trong quá trình sản xuất, vì đây là hai yếu tố quan trọng nhất ảnh hưởng đến chất lượng rượu vang.
+
+- Tuy nhiên, model vẫn gặp khó khăn trong việc phân loại các lớp chất lượng rất thấp dù đã được relabel và resample lại. Phương pháp bootstrap với 100 lần lặp lại cho thấy độ chính xác của mô hình dao động trong khoảng từ 0.60 đến 0.66, chứng tỏ mô hình có sự ổn định và độ tin cậy khá cao.
+
